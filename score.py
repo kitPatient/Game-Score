@@ -19,7 +19,7 @@ intents.message_content = True
 
 client: discord.Client = discord.Client(intents=intents)
 
-fm: list = []
+tempScores: list = []
 
 
 def formantScore(scores: list, gameName: str) -> list:
@@ -36,15 +36,9 @@ def saveCSV(formattedScore: list, filename: str = OutputFileName) -> None:
 
 
 async def interpret(content: str) -> list:
-    cmd_list: list = content.split()
-    print(cmd_list)
+    cmd_list: list = argsList(content)
 
-    if len(cmd_list) <= 2:
-        print("Not Enough Args Given")
-
-    cmd_list.pop(0)
-
-    game_name = cmd_list.pop(0)
+    game_name: str = cmd_list.pop(0)
 
     if len(cmd_list) % 2 != 0:
         print("Not Enough Args Given")
@@ -58,7 +52,7 @@ async def interpret(content: str) -> list:
     return scores
 
 
-def gameFrom(content: str) -> str:
+def argsList(content: str) -> list:
     cmd_list: list = content.split()
     print(cmd_list)
 
@@ -66,22 +60,25 @@ def gameFrom(content: str) -> str:
         print("Not Enough Args Given")
 
     cmd_list.pop(0)
+    return cmd_list
 
+
+def gameFrom(content: str) -> str:
+    cmd_list: list = argsList(content)
     return cmd_list.pop(0)
-
-
-def cmd(content: str, command: str) -> bool:
-    return content.lower().startswith(commandPrefix + command.lower())
 
 
 @client.event
 async def on_ready() -> None:
-    print(f"We have logged in as {client.user}")
+    print(f"Successfully logged in as {client.user}")
 
 
 @client.event
 async def on_message(message: discord.Message) -> None:
     content: str = message.content
+
+    def cmd(command: str) -> bool:
+        return content.lower().startswith(commandPrefix + command.lower())
 
     async def post(messageTxt: str = None, file: discord.File = None) -> None:
         return await message.channel.send(messageTxt, file=file)
@@ -89,28 +86,28 @@ async def on_message(message: discord.Message) -> None:
     if message.author == client.user:
         return
 
-    if cmd(content, "ping"):
+    if cmd("ping"):
         await post("Pong!")
 
-    if cmd(content, "score"):
+    if cmd("score"):
         scores: list = await interpret(content)
-        global fm
-        fm = formantScore(scores, gameFrom(content))
-        await post(fm)
+        global tempScores
+        tempScores = formantScore(scores, gameFrom(content))
+        await post(tempScores)
         await post(reactionMessage)
 
-    if cmd(content, "file"):
+    if cmd("file"):
         await post(file=discord.File(OutputFileName))
 
 
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user: discord.User) -> None:
-    global fm
+    global tempScores
     message: str = reaction.message.content
     if message == reactionMessage:
-        if len(fm) > 2:
-            saveCSV(fm)
-            fm = []
+        if len(tempScores) > 2:
+            saveCSV(tempScores)
+            tempScores = []
             await reaction.message.channel.send("Saved")
         else:
             await reaction.message.channel.send("Unable To Save Scores")
