@@ -1,14 +1,14 @@
 import discord
-import csv
+from csv import writer
 from datetime import date
-import sys
+from sys import exit
 
 try:
     with open("token.token", "r") as tokenFile:
         bot_token: str = tokenFile.read()
 except FileNotFoundError:
     print("Token is not found in: ", '''"token.token"''')
-    sys.exit(-1)
+    exit(-1)
 
 commandPrefix: str = "!"
 reactionMessage: str = "To Save The Scores: React to This Message"
@@ -31,8 +31,8 @@ def formantScore(scores: list, gameName: str) -> list:
 
 def saveCSV(formattedScore: list, filename: str = OutputFileName) -> None:
     with open(filename, "a", newline="") as csvFile:
-        writer = csv.writer(csvFile)
-        writer.writerow(formattedScore)
+        CSVwriter = writer(csvFile)
+        CSVwriter.writerow(formattedScore)
 
 
 async def interpret(content: str) -> list:
@@ -45,7 +45,6 @@ async def interpret(content: str) -> list:
     cmd_list.pop(0)
 
     game_name = cmd_list.pop(0)
-    # print(game_name)
 
     if len(cmd_list) % 2 != 0:
         print("Not Enough Args Given")
@@ -81,23 +80,27 @@ async def on_ready() -> None:
 
 
 @client.event
-async def on_message(message: discord.message) -> None:
+async def on_message(message: discord.Message) -> None:
     content: str = message.content
+
+    async def post(messageTxt: str = None, file: discord.File = None) -> None:
+        return await message.channel.send(messageTxt, file=file)
+
     if message.author == client.user:
         return
 
     if cmd(content, "ping"):
-        await message.channel.send("Pong!")
+        await post("Pong!")
 
     if cmd(content, "score"):
         scores: list = await interpret(content)
         global fm
         fm = formantScore(scores, gameFrom(content))
-        await message.channel.send(fm)
-        await message.channel.send(reactionMessage)
+        await post(fm)
+        await post(reactionMessage)
 
     if cmd(content, "file"):
-        await message.channel.send(file=discord.File(OutputFileName))
+        await post(file=discord.File(OutputFileName))
 
 
 @client.event
