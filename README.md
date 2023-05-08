@@ -2,8 +2,8 @@
 A simple Discord bot to keep track of scores for board games
 
 # Installation
-Requires [Python 3.8+](https://www.python.org/)
-Requires [Discord.py](https://discordpy.readthedocs.io/en/stable/)
+* Requires [Python 3.8+](https://www.python.org/)
+* Requires [Discord.py](https://discordpy.readthedocs.io/en/stable/)
 
 To install Discord.py:
  ```console
