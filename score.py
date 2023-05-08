@@ -1,5 +1,5 @@
 import discord
-from csv import writer
+from csv import writer, reader
 from datetime import date
 from sys import exit
 
@@ -35,7 +35,7 @@ def saveCSV(formattedScore: list, filename: str = OutputFileName) -> None:
         CSVwriter.writerow(formattedScore)
 
 
-async def interpret(content: str) -> list:
+async def interpretScore(content: str) -> list:
     cmd_list: list = argsList(content)
 
     game_name: str = cmd_list.pop(0)
@@ -52,11 +52,11 @@ async def interpret(content: str) -> list:
     return scores
 
 
-def argsList(content: str) -> list:
+def argsList(content: str, MinLength: int = 2) -> list:
     cmd_list: list = content.split()
     print(cmd_list)
 
-    if len(cmd_list) <= 2:
+    if len(cmd_list) <= MinLength:
         print("Not Enough Args Given")
 
     cmd_list.pop(0)
@@ -66,6 +66,17 @@ def argsList(content: str) -> list:
 def gameFrom(content: str) -> str:
     cmd_list: list = argsList(content)
     return cmd_list.pop(0)
+
+
+def getLastPlayed(game: str, allGames: list):
+    last: list[str] = []
+    for played in allGames:
+        # print(f"Testing {played[1]} Against {game}")
+        if played[1] == game:
+            last.append(played[0])
+    if len(last) < 1:
+        last.append("Not Played Yet")
+    return last[len(last) - 1]
 
 
 @client.event
@@ -90,14 +101,25 @@ async def on_message(message: discord.Message) -> None:
         await post("Pong!")
 
     if cmd("score"):
-        scores: list = await interpret(content)
+        scores: list = await interpretScore(content)
         global tempScores
         tempScores = formantScore(scores, gameFrom(content))
         await post(tempScores)
         await post(reactionMessage)
 
     if cmd("file"):
-        await post(file=discord.File(OutputFileName))
+        outputFile: discord.File = discord.File(OutputFileName)
+        await post(file=outputFile)
+
+    if cmd("last"):
+        stored: list = []
+        with open(OutputFileName, newline="") as csvFile:
+            CSVreader: reader = reader(csvFile, delimiter=",", quotechar='"')
+            for row in CSVreader:
+                stored.append(row)
+        Args: list[str] = argsList(content, 1)
+        lastPlayed: str = getLastPlayed(Args[0], stored)
+        await post(lastPlayed)
 
 
 @client.event

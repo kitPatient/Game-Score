@@ -34,3 +34,8 @@ To install Discord.py:
  !file
  ```
  This returns the file that contains all scores. This file can then be used in a program like [Google Sheets](https://docs.google.com/spreadsheets) to turn it into a spreadsheet
+
+```
+!last {game_name}
+```
+This Returns the date of the last time the given game was played
