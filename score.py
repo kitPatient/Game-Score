@@ -68,12 +68,13 @@ def gameFrom(content: str) -> str:
     return cmd_list.pop(0)
 
 
-def getLastPlayed(game: str, allGames: list):
+def getLastPlayed(game: str, allGames: list) -> list[str]:
     last: list[str] = []
     for played in allGames:
-        # print(f"Testing {played[1]} Against {game}")
-        if played[1] == game:
-            last.append(played[0])
+        if len(played) >= 2:
+            # print(f"Testing {played[1]} Against {game}")
+            if played[1] == game:
+                last.append(played[0])
     if len(last) < 1:
         last.append("Not Played Yet")
     return last[len(last) - 1]
