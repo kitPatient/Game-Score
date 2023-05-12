@@ -22,6 +22,16 @@ client: discord.Client = discord.Client(intents=intents)
 tempScores: list = []
 
 
+def splitAtUpperCase(text: str) -> list[str]:
+    result: str = ""
+    for char in text:
+        if char.isupper():
+            result += " " + char
+        else:
+            result += char
+    return result.split()
+
+
 def formantScore(scores: list, gameName: str) -> list:
     formated: list = [f"{date.today()}", f"{gameName}"]
     for playerGame in scores:
@@ -56,7 +66,7 @@ def argsList(content: str, MinLength: int = 2) -> list:
     cmd_list: list = content.split()
     print(cmd_list)
 
-    if len(cmd_list) <= MinLength:
+    if len(cmd_list) < MinLength:
         print("Not Enough Args Given")
 
     cmd_list.pop(0)
@@ -111,6 +121,7 @@ async def on_message(message: discord.Message) -> None:
     if cmd("file"):
         outputFile: discord.File = discord.File(OutputFileName)
         await post(file=outputFile)
+        await message.delete()
 
     if cmd("last"):
         stored: list = []
@@ -121,6 +132,35 @@ async def on_message(message: discord.Message) -> None:
         Args: list[str] = argsList(content, 1)
         lastPlayed: str = getLastPlayed(Args[0], stored)
         await post(lastPlayed)
+
+    if cmd("show"):
+        with open(OutputFileName, newline="") as csvFile:
+            lg = csvFile.readlines()[-1]
+
+        lastGameHolder = lg.split(",")
+
+        gameName = lastGameHolder[1]
+        words = splitAtUpperCase(gameName)
+        FormatedName = " ".join(words).capitalize()
+
+        if FormatedName == "Spirit island":
+            advisory = lastGameHolder.pop()
+            datePlayed = lastGameHolder[0]
+            playerScores = lastGameHolder[2:]
+
+            file = discord.File("images/spiritisland.jpg", filename="spiritisland.png")
+            embed = discord.Embed(title="Spirit Island", color=0x202020)
+            advisory = advisory.split(": ")[1]
+            for player in playerScores:
+                t = player.split(": ")
+                board = " ".join(splitAtUpperCase(t[1])).capitalize()
+                embed.add_field(name=f"{t[0].capitalize()}", value=board, inline=False)
+
+            embed.add_field(name="Advisory", value=advisory.capitalize())
+            embed.add_field(name="Date", value=datePlayed)
+            embed.set_image(url="attachment://spiritisland.png")
+            await message.channel.send(file=file, embed=embed)
+            await message.delete()
 
 
 @client.event
